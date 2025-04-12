@@ -32,7 +32,7 @@
         .from('users')
         .select('lat, lng')
         .eq('firebase_uid', courierId);
-
+ 
       if (error) {
         console.error('Ошибка при получении данных:', error);
         return;
