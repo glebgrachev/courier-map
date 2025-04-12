@@ -14,7 +14,7 @@
   <script>
     // Инициализация карты
     let map, courierMarker;
-
+ 
     function initMap(lat = 55.75, lng = 37.61) {
       map = new ymaps.Map("map", { center: [lat, lng], zoom: 14 });
       courierMarker = new ymaps.Placemark([lat, lng], { hintContent: "Курьер" }, { preset: 'islands#redDeliveryIcon' });
