@@ -12,6 +12,11 @@
 <body>
   <div id="map"></div>
   <script>
+    // Подключение к Supabase
+    const supabaseUrl = 'https://xgkjksdukhehiqjajbdl.supabase.co';
+    const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhna2prc2R1a2hlaGlxamFqYmRsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mzc3NTAxODksImV4cCI6MjA1MzMyNjE4OX0.BnuHmgca-OqlOYO4n3Vj0Ddwc0OAGGMtkuQe-7mg8uU'; // Замените на ваш реальный ключ
+    const supabase = supabase.createClient(supabaseUrl, supabaseKey);
+
     // Инициализация карты
     let map, courierMarker;
 
@@ -24,11 +29,6 @@
     function updateCourierPosition(lat, lng) {
       courierMarker.geometry.setCoordinates([lat, lng]);
     }
-
-    // Подключение к Supabase
-    const supabaseUrl = 'https://xgkjksdukhehiqjajbdl.supabase.co';
-    const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhna2prc2R1a2hlaGlxamFqYmRsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mzc3NTAxODksImV4cCI6MjA1MzMyNjE4OX0.BnuHmgca-OqlOYO4n3Vj0Ddwc0OAGGMtkuQe-7mg8uU'; // Замените на ваш реальный ключ
-    const supabase = supabase.createClient(supabaseUrl, supabaseKey);
 
     async function fetchCourierLocation(courierId) {
       const { data, error } = await supabase
