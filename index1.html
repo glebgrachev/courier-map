@@ -27,7 +27,7 @@
     ymaps.ready(() => {
       // Подключение к Supabase
       const supabaseUrl = 'https://xgkjksdukhehiqjajbdl.supabase.co';
-      const supabaseKey = 'YOUR_SUPABASE_KEY'; // Замените на ваш ключ
+      const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhna2prc2R1a2hlaGlxamFqYmRsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mzc3NTAxODksImV4cCI6MjA1MzMyNjE4OX0.BnuHmgca-OqlOYO4n3Vj0Ddwc0OAGGMtkuQe-7mg8uU'; // Замените на ваш ключ
       const supabase = supabase.createClient(supabaseUrl, supabaseKey);
 
       async function fetchCourierLocation(courierId) {
