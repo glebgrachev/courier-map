@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html>
+<html lang="ru">
 <head>
   <meta charset="utf-8">
   <title>Карта курьера</title>
@@ -12,11 +12,6 @@
 <body>
   <div id="map"></div>
   <script>
-    // Подключение к Supabase
-    const supabaseUrl = 'https://xgkjksdukhehiqjajbdl.supabase.co';
-    const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhna2prc2R1a2hlaGlxamFqYmRsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mzc3NTAxODksImV4cCI6MjA1MzMyNjE4OX0.BnuHmgca-OqlOYO4n3Vj0Ddwc0OAGGMtkuQe-7mg8uU'; // Замените на ваш реальный ключ
-    const supabase = supabase.createClient(supabaseUrl, supabaseKey);
-
     // Инициализация карты
     let map, courierMarker;
 
@@ -26,12 +21,14 @@
       map.geoObjects.add(courierMarker);
     }
 
-    function updateCourierPosition(lat, lng) {
-      courierMarker.geometry.setCoordinates([lat, lng]);
-    }
+    // Подключение к Supabase
+    const supabaseUrl = 'https://xgkjksdukhehiqjajbdl.supabase.co';
+    const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhna2prc2R1a2hlaGlxamFqYmRsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mzc3NTAxODksImV4cCI6MjA1MzMyNjE4OX0.BnuHmgca-OqlOYO4n3Vj0Ddwc0OAGGMtkuQe-7mg8uU'; // Замените на ваш реальный ключ
+    const { createClient } = supabase;
+    const supabaseClient = createClient(supabaseUrl, supabaseKey);
 
     async function fetchCourierLocation(courierId) {
-      const { data, error } = await supabase
+      const { data, error } = await supabaseClient
         .from('users')
         .select('lat, lng')
         .eq('firebase_uid', courierId);
@@ -41,19 +38,19 @@
         return;
       }
 
-      console.log('Данные из Supabase:', data); // Логирование полученных данных
-
       if (data.length > 0) {
         updateCourierPosition(data[0].lat, data[0].lng);
-      } else {
-        console.log('Нет данных для этого курьера');
       }
+    }
+
+    function updateCourierPosition(lat, lng) {
+      courierMarker.geometry.setCoordinates([lat, lng]);
     }
 
     // Инициализация карты и загрузка начальной позиции
     ymaps.ready(() => {
       initMap();
-      fetchCourierLocation('5'); // Передаем UID курьера для теста
+      fetchCourierLocation('5'); // Пример: ID курьера
     });
   </script>
 </body>
