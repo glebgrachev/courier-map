@@ -1,1 +1,87 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <title>Карта курьера</title>
+  <script src="https://api-maps.yandex.ru/2.1/?apikey=92bcf7c3-bc98-4394-ad36-20828c6317f7&lang=ru_RU" type="text/javascript"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@1.28.0/dist/umd/supabase.min.js"></script>
+  <style>
+    html, body, #map { width: 100%; height: 100%; margin: 0; padding: 0; }
+  </style>
+</head>
+<body>
+  <div id="map"></div>
+  <script>
+    let map, courierMarker, customerMarker;
+
+    function initMap(lat = 55.75, lng = 37.61, customerLat = null, customerLng = null) {
+      map = new ymaps.Map("map", { center: [lat, lng], zoom: 14 });
+
+      courierMarker = new ymaps.Placemark([lat, lng], {
+        hintContent: "Курьер"
+      }, {
+        preset: 'islands#redDeliveryIcon'
+      });
+
+      map.geoObjects.add(courierMarker);
+
+      if (customerLat !== null && customerLng !== null) {
+        customerMarker = new ymaps.Placemark([customerLat, customerLng], {
+          hintContent: "Покупатель"
+        }, {
+          iconLayout: 'default#imageWithContent',
+          iconImageHref: '', // не используем внешнюю иконку
+          iconImageSize: [30, 30],
+          iconContentLayout: ymaps.templateLayoutFactory.createClass(
+            '<div style="background: #2196F3; color: white; font-weight: bold; border-radius: 50%; width: 30px; height: 30px; line-height: 30px; text-align: center;">Я</div>'
+          )
+        });
+
+        map.geoObjects.add(customerMarker);
+      }
+    }
+
+    const supabaseUrl = 'https://xgkjksdukhehiqjajbdl.supabase.co';
+    const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...'; // ключ обрезан
+    const { createClient } = supabase;
+    const supabaseClient = createClient(supabaseUrl, supabaseKey);
+
+    async function updateCourierLocation(firebaseUid) {
+      const { data, error } = await supabaseClient
+        .from('courier_location')
+        .select('lat, lng')
+        .eq('firebase_uid', firebaseUid);
+
+      if (error) {
+        console.error('Ошибка при получении данных:', error);
+        return;
+      }
+
+      if (data.length > 0) {
+        const lat = data[0].lat;
+        const lng = data[0].lng;
+        courierMarker.geometry.setCoordinates([lat, lng]);
+        map.setCenter([lat, lng]);
+      }
+    }
+
+    const urlParams = new URLSearchParams(window.location.search);
+    const firebaseUid = urlParams.get('firebase_uid');
+    const customerLat = parseFloat(urlParams.get('customer_lat'));
+    const customerLng = parseFloat(urlParams.get('customer_lng'));
+
+    if (!firebaseUid) {
+      console.error("Firebase UID не передан в URL");
+    } else {
+      ymaps.ready(() => {
+        initMap(55.75, 37.61, customerLat, customerLng);
+        updateCourierLocation(firebaseUid);
+        setInterval(() => {
+          updateCourierLocation(firebaseUid);
+        }, 60000);
+      });
+    }
+  </script>
+</body>
+</html>
 
