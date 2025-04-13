@@ -12,96 +12,60 @@
 <body>
   <div id="map"></div>
   <script>
-    let map, courierMarker, customerMarker, routeLine;
-
-    function initMap(lat = 55.75, lng = 37.61, customerLat = null, customerLng = null) {
-      map = new ymaps.Map("map", { center: [lat, lng], zoom: 14 });
-
-      courierMarker = new ymaps.Placemark([lat, lng], {
-        hintContent: "Курьер"
-      }, {
-        preset: 'islands#redDeliveryIcon'
-      });
-      map.geoObjects.add(courierMarker);
-
-      if (customerLat !== null && customerLng !== null) {
-        customerMarker = new ymaps.Placemark([customerLat, customerLng], {
-          hintContent: "Покупатель"
-        }, {
-          iconLayout: 'default#imageWithContent',
-          iconImageHref: '',
-          iconImageSize: [30, 30],
-          iconContentLayout: ymaps.templateLayoutFactory.createClass(
-            '<div style="background: #2196F3; color: white; font-weight: bold; border-radius: 50%; width: 30px; height: 30px; line-height: 30px; text-align: center;">Я</div>'
-          )
-        });
-        map.geoObjects.add(customerMarker);
-      }
-    }
+    let map, multiRoute;
 
     const supabaseUrl = 'https://xgkjksdukhehiqjajbdl.supabase.co';
-    const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhna2prc2R1a2hlaGlxamFqYmRsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mzc3NTAxODksImV4cCI6MjA1MzMyNjE4OX0.BnuHmgca-OqlOYO4n3Vj0Ddwc0OAGGMtkuQe-7mg8uU'; // замените ключ при необходимости
+    const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhna2prc2R1a2hlaGlxamFqYmRsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mzc3NTAxODksImV4cCI6MjA1MzMyNjE4OX0.BnuHmgca-OqlOYO4n3Vj0Ddwc0OAGGMtkuQe-7mg8uU'; // Укажи полный ключ здесь
     const { createClient } = supabase;
     const supabaseClient = createClient(supabaseUrl, supabaseKey);
 
-    async function updateCourierLocation(userId, customerLat, customerLng) {
-      const { data, error } = await supabaseClient
-        .from('courier_location_with_user') // имя вашего view
-        .select('lat, lng')
-        .eq('id', userId); // id — это поле users.id в представлении
-
-      if (error) {
-        console.error('Ошибка при получении данных:', error);
-        return;
-      }
-
-      if (data.length > 0) {
-        const lat = data[0].lat;
-        const lng = data[0].lng;
-        courierMarker.geometry.setCoordinates([lat, lng]);
-        map.setCenter([lat, lng]);
-
-        if (customerLat !== null && customerLng !== null) {
-          buildRoute([lat, lng], [customerLat, customerLng]);
-        }
-      }
-    }
-
-    function buildRoute(startCoords, endCoords) {
-      if (routeLine) {
-        map.geoObjects.remove(routeLine);
-      }
-
-      ymaps.route([startCoords, endCoords], {
-        mapStateAutoApply: true,
-        routingMode: 'auto'
-      }).then(function (route) {
-        routeLine = route;
-        route.getPaths().options.set({
-          strokeColor: "#0000FF",
-          strokeWidth: 4
-        });
-        route.getWayPoints().removeAll();
-        map.geoObjects.add(routeLine);
-      }).catch(function (error) {
-        console.error('Ошибка построения маршрута:', error.message);
-      });
-    }
-
     const urlParams = new URLSearchParams(window.location.search);
-    const userId = parseInt(urlParams.get('id'), 10); // теперь это users.id
+    const userId = parseInt(urlParams.get('id'));
     const customerLat = parseFloat(urlParams.get('customer_lat'));
     const customerLng = parseFloat(urlParams.get('customer_lng'));
 
     if (!userId) {
       console.error("ID пользователя не передан в URL");
     } else {
-      ymaps.ready(() => {
-        initMap(55.75, 37.61, customerLat, customerLng);
-        updateCourierLocation(userId, customerLat, customerLng);
-        setInterval(() => {
-          updateCourierLocation(userId, customerLat, customerLng);
-        }, 60000);
+      ymaps.ready(async () => {
+        map = new ymaps.Map("map", { center: [55.75, 37.61], zoom: 14 });
+
+        const { data, error } = await supabaseClient
+          .from('courier_location')
+          .select('lat, lng')
+          .eq('id', userId);
+
+        if (error || !data || data.length === 0) {
+          console.error('Ошибка при получении координат курьера:', error);
+          return;
+        }
+
+        const courierLat = data[0].lat;
+        const courierLng = data[0].lng;
+
+        const routePoints = [
+          [courierLat, courierLng],
+          [customerLat, customerLng]
+        ];
+
+        multiRoute = new ymaps.multiRouter.MultiRoute({
+          referencePoints: routePoints,
+          params: { routingMode: 'auto' }
+        }, {
+          boundsAutoApply: true,
+          wayPointStartIconLayout: 'default#image',
+          wayPointStartIconImageHref: 'https://cdn-icons-png.flaticon.com/512/296/296216.png',
+          wayPointStartIconImageSize: [32, 32],
+          wayPointStartIconImageOffset: [-16, -16],
+          wayPointFinishIconLayout: 'default#imageWithContent',
+          wayPointFinishIconImageHref: '', // кастомной иконки нет — используем HTML
+          wayPointFinishIconImageSize: [30, 30],
+          wayPointFinishIconContentLayout: ymaps.templateLayoutFactory.createClass(
+            '<div style="background: #2196F3; color: white; font-weight: bold; border-radius: 50%; width: 30px; height: 30px; line-height: 30px; text-align: center;">Я</div>'
+          )
+        });
+
+        map.geoObjects.add(multiRoute);
       });
     }
   </script>
