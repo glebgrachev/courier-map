@@ -6,12 +6,7 @@
   <script src="https://api-maps.yandex.ru/2.1/?apikey=92bcf7c3-bc98-4394-ad36-20828c6317f7&lang=ru_RU" type="text/javascript"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@1.28.0/dist/umd/supabase.min.js"></script>
   <style>
-    html, body, #map {
-      width: 100%;
-      height: 100%;
-      margin: 0;
-      padding: 0;
-    }
+    html, body, #map { width: 100%; height: 100%; margin: 0; padding: 0; }
   </style>
 </head>
 <body>
@@ -20,8 +15,7 @@
     let map, multiRoute;
 
     const supabaseUrl = 'https://xgkjksdukhehiqjajbdl.supabase.co';
-    const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhna2prc2R1a2hlaGlxamFqYmRsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mzc3NTAxODksImV4cCI6MjA1MzMyNjE4OX0.BnuHmgca-OqlOYO4n3Vj0Ddwc0OAGGMtkuQe-7mg8uU';
-
+    const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhna2prc2R1a2hlaGlxamFqYmRsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mzc3NTAxODksImV4cCI6MjA1MzMyNjE4OX0.BnuHmgca-OqlOYO4n3Vj0Ddwc0OAGGMtkuQe-7mg8uU'; // Укажи полный ключ здесь
     const { createClient } = supabase;
     const supabaseClient = createClient(supabaseUrl, supabaseKey);
 
@@ -30,28 +24,24 @@
     const customerLat = parseFloat(urlParams.get('customer_lat'));
     const customerLng = parseFloat(urlParams.get('customer_lng'));
 
-    if (!userId || isNaN(customerLat) || isNaN(customerLng)) {
-      console.error("Проверь параметры URL: ?id=5&customer_lat=...&customer_lng=...");
+    if (!userId) {
+      console.error("ID пользователя не передан в URL");
     } else {
       ymaps.ready(async () => {
-        map = new ymaps.Map("map", {
-          center: [customerLat, customerLng],
-          zoom: 14
-        });
+        map = new ymaps.Map("map", { center: [55.75, 37.61], zoom: 14 });
 
         const { data, error } = await supabaseClient
           .from('courier_location')
           .select('lat, lng')
-          .eq('id', userId)
-          .single();
+          .eq('id', userId);
 
-        if (error || !data) {
+        if (error || !data || data.length === 0) {
           console.error('Ошибка при получении координат курьера:', error);
           return;
         }
 
-        const courierLat = data.lat;
-        const courierLng = data.lng;
+        const courierLat = data[0].lat;
+        const courierLng = data[0].lng;
 
         const routePoints = [
           [courierLat, courierLng],
@@ -60,54 +50,19 @@
 
         multiRoute = new ymaps.multiRouter.MultiRoute({
           referencePoints: routePoints,
-          params: {
-            routingMode: 'auto'
-          }
+          params: { routingMode: 'auto' }
         }, {
           boundsAutoApply: true,
-
-          // Метка курьера: синий круг с мопедом
-          wayPointStartIconLayout: ymaps.templateLayoutFactory.createClass(
-            <div style="
-              background: #2196F3;
-              border-radius: 50%;
-              width: 34px;
-              height: 34px;
-              display: flex;
-              align-items: center;
-              justify-content: center;
-              box-shadow: 0 0 5px rgba(0,0,0,0.3);
-            ">
-              <img src="https://cdn-icons-png.flaticon.com/512/891/891462.png" style="width:20px; height:20px;" />
-            </div>
-          ),
-          wayPointStartIconShape: {
-            type: 'Circle',
-            coordinates: [17, 17],
-            radius: 17
-          },
-
-          // Метка получателя: красный круг с буквой Я
-          wayPointFinishIconLayout: ymaps.templateLayoutFactory.createClass(
-            <div style="
-              background: #E53935;
-              border-radius: 50%;
-              width: 34px;
-              height: 34px;
-              display: flex;
-              align-items: center;
-              justify-content: center;
-              color: white;
-              font-weight: bold;
-              font-size: 16px;
-              box-shadow: 0 0 5px rgba(0,0,0,0.3);
-            ">Я</div>
-          ),
-          wayPointFinishIconShape: {
-            type: 'Circle',
-            coordinates: [17, 17],
-            radius: 17
-          }
+          wayPointStartIconLayout: 'default#image',
+          wayPointStartIconImageHref: 'https://cdn-icons-png.flaticon.com/512/296/296216.png',
+          wayPointStartIconImageSize: [32, 32],
+          wayPointStartIconImageOffset: [-16, -16],
+          wayPointFinishIconLayout: 'default#imageWithContent',
+          wayPointFinishIconImageHref: '', // кастомной иконки нет — используем HTML
+          wayPointFinishIconImageSize: [30, 30],
+          wayPointFinishIconContentLayout: ymaps.templateLayoutFactory.createClass(
+            '<div style="background: #2196F3; color: white; font-weight: bold; border-radius: 50%; width: 30px; height: 30px; line-height: 30px; text-align: center;">Я</div>'
+          )
         });
 
         map.geoObjects.add(multiRoute);
