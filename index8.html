@@ -68,7 +68,7 @@
 
           // Метка курьера: синий круг с мопедом
           wayPointStartIconLayout: ymaps.templateLayoutFactory.createClass(
-            `<div style="
+            <div style="
               background: #2196F3;
               border-radius: 50%;
               width: 34px;
@@ -79,7 +79,7 @@
               box-shadow: 0 0 5px rgba(0,0,0,0.3);
             ">
               <img src="https://cdn-icons-png.flaticon.com/512/891/891462.png" style="width:20px; height:20px;" />
-            </div>`
+            </div>
           ),
           wayPointStartIconShape: {
             type: 'Circle',
@@ -88,4 +88,31 @@
           },
 
           // Метка получателя: красный круг с буквой Я
-          wayPointFinishIconLayout:
+          wayPointFinishIconLayout: ymaps.templateLayoutFactory.createClass(
+            <div style="
+              background: #E53935;
+              border-radius: 50%;
+              width: 34px;
+              height: 34px;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              color: white;
+              font-weight: bold;
+              font-size: 16px;
+              box-shadow: 0 0 5px rgba(0,0,0,0.3);
+            ">Я</div>
+          ),
+          wayPointFinishIconShape: {
+            type: 'Circle',
+            coordinates: [17, 17],
+            radius: 17
+          }
+        });
+
+        map.geoObjects.add(multiRoute);
+      });
+    }
+  </script>
+</body>
+</html>
