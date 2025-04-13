@@ -12,8 +12,9 @@
 <body>
   <div id="map"></div>
   <script>
-    let map, courierMarker, customerMarker;
+    let map, courierMarker, customerMarker, route;
 
+    // Функция для инициализации карты
     function initMap(lat = 55.75, lng = 37.61, customerLat = null, customerLng = null) {
       map = new ymaps.Map("map", { center: [lat, lng], zoom: 14 });
 
@@ -30,7 +31,7 @@
           hintContent: "Покупатель"
         }, {
           iconLayout: 'default#imageWithContent',
-          iconImageHref: '', // не используем внешнюю иконку
+          iconImageHref: '', 
           iconImageSize: [30, 30],
           iconContentLayout: ymaps.templateLayoutFactory.createClass(
             '<div style="background: #2196F3; color: white; font-weight: bold; border-radius: 50%; width: 30px; height: 30px; line-height: 30px; text-align: center;">Я</div>'
@@ -38,6 +39,18 @@
         });
 
         map.geoObjects.add(customerMarker);
+
+        // Построение маршрута
+        route = ymaps.route([ 
+          [customerLat, customerLng],  // Местоположение покупателя
+          [lat, lng]  // Местоположение курьера
+        ], {
+          mapStateAutoApply: true
+        }).then(function(route) {
+          map.geoObjects.add(route);
+        }, function(error) {
+          alert("Ошибка при построении маршрута: " + error.message);
+        });
       }
     }
 
@@ -46,11 +59,12 @@
     const { createClient } = supabase;
     const supabaseClient = createClient(supabaseUrl, supabaseKey);
 
+    // Функция для обновления местоположения курьера
     async function updateCourierLocation(userId) {
       const { data, error } = await supabaseClient
         .from('courier_location')
         .select('lat, lng')
-        .eq('id', userId); // Используем id, а не firebase_uid
+        .eq('id', userId);  // Используем id пользователя
 
       if (error) {
         console.error('Ошибка при получении данных:', error);
@@ -62,23 +76,36 @@
         const lng = data[0].lng;
         courierMarker.geometry.setCoordinates([lat, lng]);
         map.setCenter([lat, lng]);
+
+        // Перестроим маршрут при изменении местоположения курьера
+        if (customerMarker) {
+          route = ymaps.route([ 
+            [parseFloat(urlParams.get('customer_lat')), parseFloat(urlParams.get('customer_lng'))],  // Местоположение покупателя
+            [lat, lng]  // Местоположение курьера
+          ], {
+            mapStateAutoApply: true
+          }).then(function(route) {
+            map.geoObjects.add(route);
+          }, function(error) {
+            alert("Ошибка при построении маршрута: " + error.message);
+          });
+        }
       }
     }
 
-    // Получаем id из URL
     const urlParams = new URLSearchParams(window.location.search);
-    const userId = urlParams.get('id');
+    const userId = urlParams.get('id');  // Получаем id пользователя
     const customerLat = parseFloat(urlParams.get('customer_lat'));
     const customerLng = parseFloat(urlParams.get('customer_lng'));
 
     if (!userId) {
-      console.error("ID не передан в URL");
+      console.error("ID пользователя не передан в URL");
     } else {
       ymaps.ready(() => {
-        initMap(55.75, 37.61, customerLat, customerLng);
-        updateCourierLocation(userId); // Передаем userId в функцию
+        initMap(55.75, 37.61, customerLat, customerLng); // Инициализация карты с координатами покупателя
+        updateCourierLocation(userId); // Получаем координаты курьера и обновляем местоположение
         setInterval(() => {
-          updateCourierLocation(userId); // Обновляем позицию курьера каждую минуту
+          updateCourierLocation(userId);  // Обновление местоположения курьера каждую минуту
         }, 60000);
       });
     }
