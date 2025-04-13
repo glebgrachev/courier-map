@@ -6,99 +6,86 @@
   <script src="https://api-maps.yandex.ru/2.1/?apikey=92bcf7c3-bc98-4394-ad36-20828c6317f7&lang=ru_RU" type="text/javascript"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@1.28.0/dist/umd/supabase.min.js"></script>
   <style>
-    html, body, #map { width: 100%; height: 100%; margin: 0; padding: 0; }
+    html, body, #map {
+      width: 100%;
+      height: 100%;
+      margin: 0;
+      padding: 0;
+    }
   </style>
 </head>
 <body>
   <div id="map"></div>
   <script>
-    let map, courierMarker, customerMarker;
-
-    function initMap(lat = 55.75, lng = 37.61, customerLat = null, customerLng = null) {
-      map = new ymaps.Map("map", { center: [lat, lng], zoom: 14 });
-
-      // Создаем кастомную метку для курьера с мопедом
-      courierMarker = new ymaps.Placemark([lat, lng], {
-        hintContent: "Курьер"
-      }, {
-        iconLayout: 'default#imageWithContent',
-        iconImageHref: '',
-        iconImageSize: [32, 32],
-        iconContentLayout: ymaps.templateLayoutFactory.createClass(`
-          <div style="
-            background: white;
-            border: 2px solid #2196F3;
-            width: 32px;
-            height: 32px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-          ">
-            <img src="https://fonts.gstatic.com/s/i/materialicons/delivery_dining/v8/24px.svg" width="20" height="20" style="filter: invert(0%);" />
-          </div>
-        `)
-      });
-
-      map.geoObjects.add(courierMarker);
-
-      // Создаем метку для покупателя
-      if (customerLat !== null && customerLng !== null) {
-        customerMarker = new ymaps.Placemark([customerLat, customerLng], {
-          hintContent: "Покупатель"
-        }, {
-          iconLayout: 'default#imageWithContent',
-          iconImageHref: '', // не используем внешнюю иконку
-          iconImageSize: [30, 30],
-          iconContentLayout: ymaps.templateLayoutFactory.createClass(
-            '<div style="background: #2196F3; color: white; font-weight: bold; border-radius: 50%; width: 30px; height: 30px; line-height: 30px; text-align: center;">Я</div>'
-          )
-        });
-
-        map.geoObjects.add(customerMarker);
-      }
-    }
+    let map, multiRoute;
 
     const supabaseUrl = 'https://xgkjksdukhehiqjajbdl.supabase.co';
-    const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhna2prc2R1a2hlaGlxamFqYmRsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mzc3NTAxODksImV4cCI6MjA1MzMyNjE4OX0.BnuHmgca-OqlOYO4n3Vj0Ddwc0OAGGMtkuQe-7mg8uU'; // ваш ключ
+    const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhna2prc2R1a2hlaGlxamFqYmRsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mzc3NTAxODksImV4cCI6MjA1MzMyNjE4OX0.BnuHmgca-OqlOYO4n3Vj0Ddwc0OAGGMtkuQe-7mg8uU';
+
     const { createClient } = supabase;
     const supabaseClient = createClient(supabaseUrl, supabaseKey);
 
-    async function updateCourierLocation(userId) {
-      const { data, error } = await supabaseClient
-        .from('courier_location')
-        .select('lat, lng')
-        .eq('id', userId);
-
-      if (error) {
-        console.error('Ошибка при получении данных:', error);
-        return;
-      }
-
-      if (data.length > 0) {
-        const lat = data[0].lat;
-        const lng = data[0].lng;
-        courierMarker.geometry.setCoordinates([lat, lng]);
-        map.setCenter([lat, lng]);
-      }
-    }
-
     const urlParams = new URLSearchParams(window.location.search);
-    const userId = urlParams.get('id');
+    const userId = parseInt(urlParams.get('id'));
     const customerLat = parseFloat(urlParams.get('customer_lat'));
     const customerLng = parseFloat(urlParams.get('customer_lng'));
 
-    if (!userId) {
-      console.error("User ID не передан в URL");
+    if (!userId || isNaN(customerLat) || isNaN(customerLng)) {
+      console.error("Проверь параметры URL: ?id=5&customer_lat=...&customer_lng=...");
     } else {
-      ymaps.ready(() => {
-        initMap(55.75, 37.61, customerLat, customerLng);
-        updateCourierLocation(userId);
-        setInterval(() => {
-          updateCourierLocation(userId);
-        }, 60000);
-      });
-    }
-  </script>
-</body>
-</html>
+      ymaps.ready(async () => {
+        map = new ymaps.Map("map", {
+          center: [customerLat, customerLng],
+          zoom: 14
+        });
+
+        const { data, error } = await supabaseClient
+          .from('courier_location')
+          .select('lat, lng')
+          .eq('id', userId)
+          .single();
+
+        if (error || !data) {
+          console.error('Ошибка при получении координат курьера:', error);
+          return;
+        }
+
+        const courierLat = data.lat;
+        const courierLng = data.lng;
+
+        const routePoints = [
+          [courierLat, courierLng],
+          [customerLat, customerLng]
+        ];
+
+        multiRoute = new ymaps.multiRouter.MultiRoute({
+          referencePoints: routePoints,
+          params: {
+            routingMode: 'auto'
+          }
+        }, {
+          boundsAutoApply: true,
+
+          // Метка курьера: синий круг с мопедом
+          wayPointStartIconLayout: ymaps.templateLayoutFactory.createClass(
+            `<div style="
+              background: #2196F3;
+              border-radius: 50%;
+              width: 34px;
+              height: 34px;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              box-shadow: 0 0 5px rgba(0,0,0,0.3);
+            ">
+              <img src="https://cdn-icons-png.flaticon.com/512/891/891462.png" style="width:20px; height:20px;" />
+            </div>`
+          ),
+          wayPointStartIconShape: {
+            type: 'Circle',
+            coordinates: [17, 17],
+            radius: 17
+          },
+
+          // Метка получателя: красный круг с буквой Я
+          wayPointFinishIconLayout:
