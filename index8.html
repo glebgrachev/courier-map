@@ -2,7 +2,7 @@
 <html lang="ru">
 <head>
   <meta charset="utf-8">
-  <title>Карта курьера с маршрутом</title>
+  <title>Карта курьера</title>
   <script src="https://api-maps.yandex.ru/2.1/?apikey=92bcf7c3-bc98-4394-ad36-20828c6317f7&lang=ru_RU" type="text/javascript"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@1.28.0/dist/umd/supabase.min.js"></script>
   <style>
@@ -13,18 +13,8 @@
   <div id="map"></div>
   <script>
     let map, courierMarker, customerMarker, routeLine;
- 
-    const urlParams = new URLSearchParams(window.location.search);
-    const firebaseUid = urlParams.get('firebase_uid');
-    const customerLat = parseFloat(urlParams.get('customer_lat'));
-    const customerLng = parseFloat(urlParams.get('customer_lng'));
 
-    const supabaseUrl = 'https://xgkjksdukhehiqjajbdl.supabase.co';
-    const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhna2prc2R1a2hlaGlxamFqYmRsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mzc3NTAxODksImV4cCI6MjA1MzMyNjE4OX0.BnuHmgca-OqlOYO4n3Vj0Ddwc0OAGGMtkuQe-7mg8uU'; // ключ обрезан
-    const { createClient } = supabase;
-    const supabaseClient = createClient(supabaseUrl, supabaseKey);
-
-    function initMap(lat = 55.75, lng = 37.61) {
+    function initMap(lat = 55.75, lng = 37.61, customerLat = null, customerLng = null) {
       map = new ymaps.Map("map", { center: [lat, lng], zoom: 14 });
 
       courierMarker = new ymaps.Placemark([lat, lng], {
@@ -32,10 +22,9 @@
       }, {
         preset: 'islands#redDeliveryIcon'
       });
-
       map.geoObjects.add(courierMarker);
 
-      if (!isNaN(customerLat) && !isNaN(customerLng)) {
+      if (customerLat !== null && customerLng !== null) {
         customerMarker = new ymaps.Placemark([customerLat, customerLng], {
           hintContent: "Покупатель"
         }, {
@@ -46,12 +35,16 @@
             '<div style="background: #2196F3; color: white; font-weight: bold; border-radius: 50%; width: 30px; height: 30px; line-height: 30px; text-align: center;">Я</div>'
           )
         });
-
         map.geoObjects.add(customerMarker);
       }
     }
 
-    async function updateCourierLocation(firebaseUid) {
+    const supabaseUrl = 'https://xgkjksdukhehiqjajbdl.supabase.co';
+    const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...'; // замените ключ, если нужно
+    const { createClient } = supabase;
+    const supabaseClient = createClient(supabaseUrl, supabaseKey);
+
+    async function updateCourierLocation(firebaseUid, customerLat, customerLng) {
       const { data, error } = await supabaseClient
         .from('courier_location')
         .select('lat, lng')
@@ -65,11 +58,13 @@
       if (data.length > 0) {
         const lat = data[0].lat;
         const lng = data[0].lng;
-
         courierMarker.geometry.setCoordinates([lat, lng]);
         map.setCenter([lat, lng]);
 
-        buildRoute([lat, lng], [customerLat, customerLng]);
+        // Строим маршрут
+        if (customerLat !== null && customerLng !== null) {
+          buildRoute([lat, lng], [customerLat, customerLng]);
+        }
       }
     }
 
@@ -78,25 +73,41 @@
         map.geoObjects.remove(routeLine);
       }
 
-      ymaps.route([startCoords, endCoords])
-        .then(function (route) {
-          routeLine = route;
-          map.geoObjects.add(routeLine);
-        })
-        .catch(function (error) {
-          console.error('Ошибка построения маршрута:', error.message);
+      ymaps.route([startCoords, endCoords], {
+        mapStateAutoApply: true,
+        routingMode: 'auto'
+      }).then(function (route) {
+        routeLine = route;
+
+        // Стилизация линии
+        route.getPaths().options.set({
+          strokeColor: "#0000FF",
+          strokeWidth: 4
         });
+
+        // Удаляем стандартные точки начала/конца маршрута
+        route.getWayPoints().removeAll();
+
+        map.geoObjects.add(routeLine);
+      }).catch(function (error) {
+        console.error('Ошибка построения маршрута:', error.message);
+      });
     }
+
+    // Параметры из URL
+    const urlParams = new URLSearchParams(window.location.search);
+    const firebaseUid = urlParams.get('firebase_uid');
+    const customerLat = parseFloat(urlParams.get('customer_lat'));
+    const customerLng = parseFloat(urlParams.get('customer_lng'));
 
     if (!firebaseUid) {
       console.error("Firebase UID не передан в URL");
     } else {
       ymaps.ready(() => {
-        initMap();
-
-        updateCourierLocation(firebaseUid);
+        initMap(55.75, 37.61, customerLat, customerLng);
+        updateCourierLocation(firebaseUid, customerLat, customerLng);
         setInterval(() => {
-          updateCourierLocation(firebaseUid);
+          updateCourierLocation(firebaseUid, customerLat, customerLng);
         }, 60000);
       });
     }
