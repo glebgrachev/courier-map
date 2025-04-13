@@ -13,7 +13,7 @@
   <div id="map"></div>
   <script>
     let map, courierMarker, customerMarker, routeLine;
-
+ 
     const urlParams = new URLSearchParams(window.location.search);
     const firebaseUid = urlParams.get('firebase_uid');
     const customerLat = parseFloat(urlParams.get('customer_lat'));
