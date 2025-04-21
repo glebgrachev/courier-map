@@ -21,14 +21,14 @@
 
     const urlParams = new URLSearchParams(window.location.search);
     const userId = parseInt(urlParams.get('id'));
-    const shopLat = parseFloat(urlParams.get('shopLat'));
-    const shopLng = parseFloat(urlParams.get('shopLng'));
+    const shopLat = parseFloat(urlParams.get('shop_lat'));
+    const shopLng = parseFloat(urlParams.get('shop_lng'));
 
     if (!userId || isNaN(shopLat) || isNaN(shopLng)) {
       console.error("Не передан id пользователя или координаты магазина");
     } else {
       ymaps.ready(async () => {
-        map = new ymaps.Map("map", { center: [55.75, 37.61], zoom: 14 });
+        map = new ymaps.Map("map", { center: [shopLat, shopLng], zoom: 14 });
 
         const { data, error } = await supabaseClient
           .from('courier_location')
