@@ -13,9 +13,9 @@
   <div id="map"></div>
   <script>
     let map, multiRoute;
-  
+
     const supabaseUrl = 'https://xgkjksdukhehiqjajbdl.supabase.co';
-    const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhna2prc2R1a2hlaGlxamFqYmRsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mzc3NTAxODksImV4cCI6MjA1MzMyNjE4OX0.BnuHmgca-OqlOYO4n3Vj0Ddwc0OAGGMtkuQe-7mg8uU'; // Укажи полный ключ здесь
+    const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhna2prc2R1a2hlaGlxamFqYmRsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mzc3NTAxODksImV4cCI6MjA1MzMyNjE4OX0.BnuHmgca-OqlOYO4n3Vj0Ddwc0OAGGMtkuQe-7mg8u';
     const { createClient } = supabase;
     const supabaseClient = createClient(supabaseUrl, supabaseKey);
 
@@ -24,61 +24,69 @@
     const customerLat = parseFloat(urlParams.get('customer_lat'));
     const customerLng = parseFloat(urlParams.get('customer_lng'));
 
-    if (!userId) {
-      console.error("ID пользователя не передан в URL");
+    async function updateRoute() {
+      const { data, error } = await supabaseClient
+        .from('courier_location')
+        .select('lat, lng')
+        .eq('id', userId);
+
+      if (error || !data || data.length === 0) {
+        console.error('Ошибка при получении координат курьера:', error);
+        return;
+      }
+
+      const courierLat = data[0].lat;
+      const courierLng = data[0].lng;
+
+      const routePoints = [
+        [courierLat, courierLng],
+        [customerLat, customerLng]
+      ];
+
+      if (multiRoute) {
+        map.geoObjects.remove(multiRoute);
+      }
+
+      multiRoute = new ymaps.multiRouter.MultiRoute({
+        referencePoints: routePoints,
+        params: { routingMode: 'auto' }
+      }, {
+        boundsAutoApply: true,
+        wayPointStartIconLayout: 'default#imageWithContent',
+        wayPointStartIconImageHref: '',
+        wayPointStartIconImageSize: [32, 32],
+        wayPointStartIconContentLayout: ymaps.templateLayoutFactory.createClass(`
+          <div style="
+            background: white;
+            border: 2px solid #2196F3;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+          ">
+            <img src="https://fonts.gstatic.com/s/i/materialicons/delivery_dining/v8/24px.svg" width="20" height="20" style="filter: invert(0%);" />
+          </div>
+        `),
+        wayPointFinishIconLayout: 'default#imageWithContent',
+        wayPointFinishIconImageHref: '',
+        wayPointFinishIconImageSize: [30, 30],
+        wayPointFinishIconContentLayout: ymaps.templateLayoutFactory.createClass(
+          '<div style="background: #F44336; color: white; font-weight: bold; border-radius: 50%; width: 30px; height: 30px; line-height: 30px; text-align: center;">Я</div>'
+        )
+      });
+
+      map.geoObjects.add(multiRoute);
+    }
+
+    if (!userId || isNaN(customerLat) || isNaN(customerLng)) {
+      console.error("Не передан id пользователя или координаты клиента");
     } else {
-      ymaps.ready(async () => {
+      ymaps.ready(() => {
         map = new ymaps.Map("map", { center: [55.75, 37.61], zoom: 14 });
-
-        const { data, error } = await supabaseClient
-          .from('courier_location')
-          .select('lat, lng')
-          .eq('id', userId);
-
-        if (error || !data || data.length === 0) {
-          console.error('Ошибка при получении координат курьера:', error);
-          return;
-        }
-
-        const courierLat = data[0].lat;
-        const courierLng = data[0].lng;
-
-        const routePoints = [
-          [courierLat, courierLng],
-          [customerLat, customerLng]
-        ];
-
-        multiRoute = new ymaps.multiRouter.MultiRoute({
-          referencePoints: routePoints,
-          params: { routingMode: 'auto' }
-        }, {
-          boundsAutoApply: true,
-          wayPointStartIconLayout: 'default#imageWithContent',
-  wayPointStartIconImageHref: '',
-  wayPointStartIconImageSize: [32, 32],
-  wayPointStartIconContentLayout: ymaps.templateLayoutFactory.createClass(`
-    <div style="
-      background: white;
-      border: 2px solid #2196F3;
-      width: 32px;
-      height: 32px;
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    ">
-      <img src="https://fonts.gstatic.com/s/i/materialicons/delivery_dining/v8/24px.svg" width="20" height="20" style="filter: invert(0%);" />
-    </div>
-  `),
-          wayPointFinishIconLayout: 'default#imageWithContent',
-          wayPointFinishIconImageHref: '', // кастомной иконки нет — используем HTML
-          wayPointFinishIconImageSize: [30, 30],
-          wayPointFinishIconContentLayout: ymaps.templateLayoutFactory.createClass(
-            '<div style="background: #F44336; color: white; font-weight: bold; border-radius: 50%; width: 30px; height: 30px; line-height: 30px; text-align: center;">Я</div>'
-          )
-        });
-
-        map.geoObjects.add(multiRoute);
+        updateRoute(); // Первая отрисовка маршрута
+        setInterval(updateRoute, 60000); // Обновление маршрута каждую минуту
       });
     }
   </script>
