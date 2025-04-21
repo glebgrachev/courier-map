@@ -6,12 +6,7 @@
   <script src="https://api-maps.yandex.ru/2.1/?apikey=92bcf7c3-bc98-4394-ad36-20828c6317f7&lang=ru_RU" type="text/javascript"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@1.28.0/dist/umd/supabase.min.js"></script>
   <style>
-    html, body, #map {
-      width: 100%;
-      height: 100%;
-      margin: 0;
-      padding: 0;
-    }
+    html, body, #map { width: 100%; height: 100%; margin: 0; padding: 0; }
   </style>
 </head>
 <body>
@@ -80,20 +75,11 @@
 
           // Магазин (финиш)
           wayPointFinishIconLayout: 'default#imageWithContent',
-          wayPointFinishIconImageHref: '',
+          wayPointFinishIconImageHref: 'assets/icons/food_bank.svg',  // Обновленный путь к иконке
           wayPointFinishIconImageSize: [32, 32],
           wayPointFinishIconContentLayout: ymaps.templateLayoutFactory.createClass(`
-            <div style="
-              background: white;
-              border: 2px solid #4CAF50;
-              width: 32px;
-              height: 32px;
-              border-radius: 50%;
-              display: flex;
-              align-items: center;
-              justify-content: center;
-            ">
-              <img src="https://fonts.gstatic.com/s/i/materialicons/storefront/v11/24px.svg" width="20" height="20" />
+            <div style="background: white; border: 2px solid #4CAF50; width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+              <img src="assets/icons/food_bank.svg" width="20" height="20" />
             </div>
           `)
         });
