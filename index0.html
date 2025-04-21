@@ -19,7 +19,7 @@
 
     const urlParams = new URLSearchParams(window.location.search);
     const userId = parseInt(urlParams.get('id'));
-
+ 
     if (!userId) {
       console.error("ID пользователя не передан в URL");
     } else {
