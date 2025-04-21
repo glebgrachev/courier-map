@@ -13,7 +13,7 @@
   <div id="map"></div>
   <script>
     let map, multiRoute;
-  
+
     const supabaseUrl = 'https://xgkjksdukhehiqjajbdl.supabase.co';
     const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhna2prc2R1a2hlaGlxamFqYmRsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mzc3NTAxODksImV4cCI6MjA1MzMyNjE4OX0.BnuHmgca-OqlOYO4n3Vj0Ddwc0OAGGMtkuQe-7mg8uU'; // Укажи полный ключ здесь
     const { createClient } = supabase;
@@ -53,29 +53,44 @@
           params: { routingMode: 'auto' }
         }, {
           boundsAutoApply: true,
+          
+          // Курьер (старт)
           wayPointStartIconLayout: 'default#imageWithContent',
-  wayPointStartIconImageHref: '',
-  wayPointStartIconImageSize: [32, 32],
-  wayPointStartIconContentLayout: ymaps.templateLayoutFactory.createClass(`
-    <div style="
-      background: white;
-      border: 2px solid #2196F3;
-      width: 32px;
-      height: 32px;
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    ">
-      <img src="https://fonts.gstatic.com/s/i/materialicons/delivery_dining/v8/24px.svg" width="20" height="20" style="filter: invert(0%);" />
-    </div>
-  `),
+          wayPointStartIconImageHref: '',
+          wayPointStartIconImageSize: [32, 32],
+          wayPointStartIconContentLayout: ymaps.templateLayoutFactory.createClass(`
+            <div style="
+              background: white;
+              border: 2px solid #2196F3;
+              width: 32px;
+              height: 32px;
+              border-radius: 50%;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+            ">
+              <img src="https://fonts.gstatic.com/s/i/materialicons/delivery_dining/v8/24px.svg" width="20" height="20" style="filter: invert(0%);" />
+            </div>
+          `),
+
+          // Клиент (финиш) с иконкой
           wayPointFinishIconLayout: 'default#imageWithContent',
-          wayPointFinishIconImageHref: '', // кастомной иконки нет — используем HTML
-          wayPointFinishIconImageSize: [30, 30],
-          wayPointFinishIconContentLayout: ymaps.templateLayoutFactory.createClass(
-            '<div style="background: #F44336; color: white; font-weight: bold; border-radius: 50%; width: 30px; height: 30px; line-height: 30px; text-align: center;">Я</div>'
-          )
+          wayPointFinishIconImageHref: 'assets/icons/person.svg', // Путь к иконке
+          wayPointFinishIconImageSize: [32, 32],
+          wayPointFinishIconContentLayout: ymaps.templateLayoutFactory.createClass(`
+            <div style="
+              background: white;
+              border: 2px solid #F44336;
+              width: 32px;
+              height: 32px;
+              border-radius: 50%;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+            ">
+              <img src="assets/icons/person.svg" width="20" height="20" style="filter: invert(0%);" />
+            </div>
+          `)
         });
 
         map.geoObjects.add(multiRoute);
