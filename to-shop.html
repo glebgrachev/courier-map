@@ -6,7 +6,12 @@
   <script src="https://api-maps.yandex.ru/2.1/?apikey=92bcf7c3-bc98-4394-ad36-20828c6317f7&lang=ru_RU" type="text/javascript"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@1.28.0/dist/umd/supabase.min.js"></script>
   <style>
-    html, body, #map { width: 100%; height: 100%; margin: 0; padding: 0; }
+    html, body, #map {
+      width: 100%;
+      height: 100%;
+      margin: 0;
+      padding: 0;
+    }
   </style>
 </head>
 <body>
@@ -28,7 +33,7 @@
       console.error("Не передан id пользователя или координаты магазина");
     } else {
       ymaps.ready(async () => {
-        map = new ymaps.Map("map", { center: [shopLat, shopLng], zoom: 14 });
+        map = new ymaps.Map("map", { center: [55.75, 37.61], zoom: 14 });
 
         const { data, error } = await supabaseClient
           .from('courier_location')
@@ -79,8 +84,8 @@
           wayPointFinishIconImageSize: [32, 32],
           wayPointFinishIconContentLayout: ymaps.templateLayoutFactory.createClass(`
             <div style="
-              background: #4CAF50;
-              border: 2px solid #2E7D32;
+              background: white;
+              border: 2px solid #4CAF50;
               width: 32px;
               height: 32px;
               border-radius: 50%;
@@ -88,7 +93,7 @@
               align-items: center;
               justify-content: center;
             ">
-              <img src="https://fonts.gstatic.com/s/i/materialicons/maps_home_work_outlined/v7/24px.svg" width="20" height="20" style="filter: invert(100%)" />
+              <img src="https://fonts.gstatic.com/s/i/materialicons/storefront/v11/24px.svg" width="20" height="20" />
             </div>
           `)
         });
