@@ -15,7 +15,7 @@
     let map, multiRoute;
 
     const supabaseUrl = 'https://xgkjksdukhehiqjajbdl.supabase.co';
-    const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhna2prc2R1a2hlaGlxamFqYmRsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mzc3NTAxODksImV4cCI6MjA1MzMyNjE4OX0.BnuHmgca-OqlOYO4n3Vj0Ddwc0OAGGMtkuQe-7mg8uU';
+    const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhna2prc2R1a2hlaGlxamFqYmRsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mzc3NTAxODksImV4cCI6MjA1MzMyNjE4OX0.BnuHmgca-OqlOYO4n3Vj0Ddwc0OAGGMtkuQe-7mg8u';
     const { createClient } = supabase;
     const supabaseClient = createClient(supabaseUrl, supabaseKey);
 
@@ -59,4 +59,43 @@
           wayPointStartIconImageHref: '',
           wayPointStartIconImageSize: [32, 32],
           wayPointStartIconContentLayout: ymaps.templateLayoutFactory.createClass(`
-            <div
+            <div style="
+              background: white;
+              border: 2px solid #2196F3;
+              width: 32px;
+              height: 32px;
+              border-radius: 50%;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+            ">
+              <img src="https://fonts.gstatic.com/s/i/materialicons/delivery_dining/v8/24px.svg" width="20" height="20" />
+            </div>
+          `),
+
+          // Магазин (финиш)
+          wayPointFinishIconLayout: 'default#imageWithContent',
+          wayPointFinishIconImageHref: '',
+          wayPointFinishIconImageSize: [32, 32],
+          wayPointFinishIconContentLayout: ymaps.templateLayoutFactory.createClass(`
+            <div style="
+              background: #4CAF50;
+              border: 2px solid #2E7D32;
+              width: 32px;
+              height: 32px;
+              border-radius: 50%;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+            ">
+              <img src="https://fonts.gstatic.com/s/i/materialicons/maps_home_work_outlined/v7/24px.svg" width="20" height="20" style="filter: invert(100%)" />
+            </div>
+          `)
+        });
+
+        map.geoObjects.add(multiRoute);
+      });
+    }
+  </script>
+</body>
+</html>
