@@ -52,6 +52,7 @@
         params: { routingMode: 'auto' }
       }, {
         boundsAutoApply: true,
+        routePanelVisible: false
         wayPointStartIconLayout: 'default#imageWithContent',
         wayPointStartIconImageHref: '',
         wayPointStartIconImageSize: [32, 32],
