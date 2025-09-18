@@ -12,8 +12,7 @@
 <body>
   <div id="map"></div>
   <script>
-    let map, route;
-
+    let map, multiRoute;
     const supabaseUrl = 'https://bwgagmhkswmwptufvuvn.supabase.co';
     const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJ3Z2FnbWhrc3dtd3B0dWZ2dXZuIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1MDgzMDQ2NiwiZXhwIjoyMDY2NDA2NDY2fQ.YI9NnNynY6eaFhmoZjl9iSH_bzQfiWxJqcPuWf432zg';
     const { createClient } = supabase;
@@ -21,8 +20,8 @@
 
     const urlParams = new URLSearchParams(window.location.search);
     const userId = parseInt(urlParams.get('id'));
-    const customerLat = parseFloat(urlParams.get('customer_lat'));
-    const customerLng = parseFloat(urlParams.get('customer_lng'));
+    const shopLat = parseFloat(urlParams.get('shop_lat'));
+    const shopLng = parseFloat(urlParams.get('shop_lng'));
 
     async function updateRoute() {
       const { data, error } = await supabaseClient
@@ -40,62 +39,40 @@
 
       const routePoints = [
         [courierLat, courierLng],
-        [customerLat, customerLng]
+        [shopLat, shopLng]
       ];
 
-      if (route) {
-        map.geoObjects.remove(route);
+      if (multiRoute) {
+        map.geoObjects.remove(multiRoute);
       }
 
-      ymaps.route(routePoints, { routingMode: "auto" }).then(function(newRoute) {
-        route = newRoute;
-        map.geoObjects.add(route);
-
-        // Маркер курьера
-        const courierPlacemark = new ymaps.Placemark([courierLat, courierLng], {}, {
-          iconLayout: 'default#imageWithContent',
-          iconImageHref: '',
-          iconImageSize: [32, 32],
-          iconContentLayout: ymaps.templateLayoutFactory.createClass(`
-            <div style="
-              background: white;
-              border: 2px solid #2196F3;
-              width: 32px;
-              height: 32px;
-              border-radius: 50%;
-              display: flex;
-              align-items: center;
-              justify-content: center;
-            ">
-              <img src="https://fonts.gstatic.com/s/i/materialicons/delivery_dining/v8/24px.svg" width="20" height="20"/>
-            </div>
-          `)
-        });
-
-        // Маркер клиента
-        const customerPlacemark = new ymaps.Placemark([customerLat, customerLng], {}, {
-          iconLayout: 'default#imageWithContent',
-          iconImageHref: '',
-          iconImageSize: [30, 30],
-          iconContentLayout: ymaps.templateLayoutFactory.createClass(
-            '<div style="background: #F44336; color: white; font-weight: bold; border-radius: 50%; width: 30px; height: 30px; line-height: 30px; text-align: center;">Я</div>'
-          )
-        });
-
-        map.geoObjects.add(courierPlacemark);
-        map.geoObjects.add(customerPlacemark);
-
-        map.setBounds(route.getBounds(), { checkZoomRange: true, zoomMargin: 40 });
+      multiRoute = new ymaps.multiRouter.MultiRoute({
+        referencePoints: routePoints,
+        params: { routingMode: 'auto' }
+      }, {
+        boundsAutoApply: true,
+        // 🚫 отключаем стандартные кнопки
+        routeActiveStrokeColor: "#2196F3",
+        routeActiveStrokeWidth: 5,
+        routeActiveStrokeStyle: 'solid'
       });
+
+      // Убираем панели управления, которые добавляет MultiRoute
+      multiRoute.model.events.add("requestsuccess", () => {
+        const panels = document.querySelectorAll(".ymaps-2-1-79-route-panel, .ymaps-2-1-79-controls__toolbar");
+        panels.forEach(el => el.style.display = "none");
+      });
+
+      map.geoObjects.add(multiRoute);
     }
 
-    if (!userId || isNaN(customerLat) || isNaN(customerLng)) {
-      console.error("Не передан id пользователя или координаты клиента");
+    if (!userId || isNaN(shopLat) || isNaN(shopLng)) {
+      console.error("Не передан id пользователя или координаты магазина");
     } else {
       ymaps.ready(() => {
-        map = new ymaps.Map("map", { center: [55.75, 37.61], zoom: 14 });
-        updateRoute(); // Первая отрисовка маршрута
-        setInterval(updateRoute, 60000); // Обновление маршрута каждую минуту
+        map = new ymaps.Map("map", { center: [55.75, 37.61], zoom: 14, controls: [] });
+        updateRoute(); // Первая отрисовка
+        setInterval(updateRoute, 60000); // Повтор каждые 60 секунд
       });
     }
   </script>
